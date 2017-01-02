@@ -7,9 +7,6 @@ module.change_code = 1;
 
 // Define an alexa-app
 var app = new alexa.app('gafirecondition');
-app.launch(function(req,res) {
-	res.say("Hello World!!");
-});
 
 var Conditions = function (station, wind_speed, wind_direction, danger_class_today, danger_class_tomorrow, error) {
     this.station = station;
@@ -208,5 +205,12 @@ app.intent('ListStationsIntent', {
         console.log('=1= Returned ');
 	}
 );
+
+app.pre = function(request, response, type) {
+  if (request.applicationId != process.env.APPID) {
+    // fail ungracefully
+    response.fail("Invalid applicationId");
+  }
+};
 
 module.exports = app;
