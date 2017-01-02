@@ -1,7 +1,7 @@
 language: node_js
 deploy:
   provider: lambda
-  function_name: lambda-test
+  function_name: GAFireWeather
   role: arn:aws:iam::916772435401:role/GAFireWeather-Deploy
   handler_name: index.handler
   access_key_id:
