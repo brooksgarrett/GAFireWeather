@@ -3,7 +3,7 @@ deploy:
   provider: lambda
   function_name: GAFireWeather
   role: arn:aws:iam::916772435401:role/service-role/gaFireWeatherService
-  handler_name: index.handler
+  handler_name: handler
   access_key_id:
     secure: EcJsvaag8DG9eLvXx4SP1Cw3cMU9qh7KY9g/JKpDoCexi/kkgRp+CU+oW4kF3mG3QyadxAroPzaYOF5eI1g2Z6wKygUxHNnB0SpP9jitqd0qL+H7AeRuZjIVTx0navEcbnnlyNPgqnKjw2+qy4ZMyhlHJGb19BegtTULWHD4gLhWWDCiC/M9S7ePnaWfzsqA/47/s/Z2q7h9jWguQ+q5Oc9nOaQzl9CQW34xS9kJWGsZfq4cxuItB/D66evYsRrKr3Esi/rFEYpFlycV9G93eEy3Wz9b3rdxUjKWHtITYNpmS9BUHn8RTO7eQG0gdLTPxbh9CQLwPcGnHIcubPazB4iDkb3oGqCLHzjJYdsJuzZjFkRGpIRY42rEPKlYh/5WOvXcDQKORcGPv11LkXil0dkDWEeAHm0Mo+wKXcgWCrlaiKdPVcKwqf4/yv6ENKKUI7UTUwYZ9TT7RwsnbMTpMggHJvF0S0tqCuN3pniOQMf2CiLDTSAmxACH1lwGYC7gTHsHvGQ27IAulQlKiv/znyB83YHEpx3DpEyIkm93vrWjw+G6R0Z0EByEj903qauEfIDhaFO5jewtpGLGjBcKGhhc2p+Pd+/ulxE+zL1Ucgk6rJl8Y+pgaRt3DUZmtUl6fcV0QgdAixnnakZ0HByXfxoBduEzUsYIJ7f98P8MShg=
   secret_access_key:
