@@ -3,6 +3,7 @@ node_js:
   - 4.3
 deploy:
   provider: lambda
+  runtime: "Node.JS 4.3"
   function_name: GAFireWeather
   role: arn:aws:iam::916772435401:role/service-role/gaFireWeatherService
   handler_name: handler
