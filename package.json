@@ -5,9 +5,6 @@
   "main": "index.js",
   "author": "Brooks Garrett <webmaster@brooksgarrett.com>",
   "license": "ISC",
-  "alexa": {
-    "applicationId": ""
-  },
   "dependencies": {
     "alexa-app": "^2.1.0",
     "cheerio": "^0.22.0",

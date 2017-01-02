@@ -207,7 +207,7 @@ app.intent('ListStationsIntent', {
 );
 
 app.pre = function(request, response, type) {
-  if (request.applicationId != process.env.APPID) {
+  if (process.env.APPID && request.applicationId != process.env.APPID) {
     // fail ungracefully
     response.fail("Invalid applicationId");
   }
