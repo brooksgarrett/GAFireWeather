@@ -111,10 +111,11 @@ function calculateBurnRisk(conditions, day) {
             risk = 'Low';
             command = 'may';
             break;
-        case "2": 
+        case "2":
             risk = 'Moderate';
             command = 'can';
             break;
+        case "3-":
         case "3": 
             risk = 'High';
             command = 'should carefully';
@@ -123,6 +124,7 @@ function calculateBurnRisk(conditions, day) {
             risk = 'High';
             command = 'should not';
             break;
+        case "4-":
         case "4": 
             risk = 'Very High';
             command = 'are not allowed to';
@@ -131,6 +133,7 @@ function calculateBurnRisk(conditions, day) {
             risk = 'Very High';
             command = 'are not allowed to';
             break;
+        case "5-":
         case "5": 
             risk = 'Extreme';
             command = 'are not allowed to';
@@ -172,7 +175,7 @@ function stationHelper(station) {
 
 app.intent('CurrentConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me|for} {the danger class|the fire condition} {for|in} {STATION}{| today}",
+		,"utterances":["{what is|tell me|for} {|the} {|report|conditions|danger class|fire condition} {for|in} {STATION}{| today}",
             "{what is|tell me|for} {|today|todays} {|the} {danger class|fire condition|fire danger} {for|in} {STATION}"]
 	},function(req,res) {
         console.log('=1= CurrentConditionsIntent ');
@@ -184,7 +187,7 @@ app.intent('CurrentConditionsIntent', {
 
 app.intent('NextDayConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me|for} {the danger class|the fire condition|the fire danger} {for|in} {STATION} {tomorrow}",
+		,"utterances":["{what is|tell me|for} {|the} {|report|conditions|danger class|fire condition} {for|in} {STATION} {tomorrow}",
            "{what is|tell me|for} {tomorrow|tomorrows} {danger class|fire condition|fire danger} {for|in} {STATION}" ]
 	},function(req,res) {
         console.log('=1= NextDayConditionsIntent ');
