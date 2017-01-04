@@ -1,12 +1,18 @@
 var alexa = require('alexa-app');
 var request = require('request');
 var cheerio = require('cheerio');
+var FuzzySet = require('fuzzyset.js');
 
 // Allow this module to be reloaded by hotswap when changed
 module.change_code = 1;
 
 // Define an alexa-app
 var app = new alexa.app('gafirecondition');
+
+const STATIONS = ['Chatsworth', 'Dallas', 'Dawsonville', 'Sumtner', 'Watkinsville', 'Camilla', 'Americus', 'Adel',
+'Byromville', 'Fort Benning', 'Washington', 'Louisville', 'Brender NFS', 'Milledgeville', 'Newnan', 'Sterling', 'Waycross',
+'Baxley', 'Folkston', 'Fargo', 'Eddy Tower', 'McRae', 'Metter', 'Midway', 'Claxton', 'Richmond Hill', 'Taylor Creek', 'Lawson',
+'Ft. Stewart'];
 
 var Conditions = function (station, wind_speed, wind_direction, danger_class_today, danger_class_tomorrow, error) {
     this.station = station;
@@ -31,8 +37,22 @@ Conditions.prototype.textWindspeed = function () {
     }
 }
 
-getWeatherConditions = function (station, res, resCallback) {
+findStation = function (station) {
+    f = FuzzySet(STATIONS);
+    bestMatch = f.get(station)[0];
+    if (bestMatch[0] > 0.4){
+        return bestMatch[1];
+    } else {
+        return undefined;
+    };
+};
+
+getWeatherConditions = function (heardStation, res, resCallback) {
     console.log("==2== getWeatherConditions ====");
+    station = findStation(heardStation);
+    if (typeof(station) === 'undefined'){
+        returnError(new Conditions(station, undefined, undefined, undefined, undefined, "That doesn't seem like a valid station. Ask me for a list of stations if you need help."), res);
+    }
     request('http://weather.gfc.state.ga.us/CURRENT2/NFDRSSUM11.aspx', function (error, response, body) {
             console.log("===3=== Entering request");
             var danger = 1;
@@ -146,9 +166,14 @@ function returnError (conditions, res) {
     console.log("===3=== Response sent");
 };
 
+function stationHelper(station) {
+
+}
+
 app.intent('CurrentConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me} {the danger class|the fire condition} {for|in} {STATION}{| today}"]
+		,"utterances":["{what is|tell me|for} {the danger class|the fire condition} {for|in} {STATION}{| today}",
+            "{what is|tell me|for} {|today|todays} {|the} {danger class|fire condition|fire danger} {for|in} {STATION}"]
 	},function(req,res) {
         console.log('=1= CurrentConditionsIntent ');
         getWeatherConditions(req.slot('STATION'), res, returnCurrentWeatherConditions);
@@ -159,7 +184,8 @@ app.intent('CurrentConditionsIntent', {
 
 app.intent('NextDayConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me} {the danger class|the fire condition|the fire danger} {for|in} {STATION} {tomorrow}"]
+		,"utterances":["{what is|tell me|for} {the danger class|the fire condition|the fire danger} {for|in} {STATION} {tomorrow}",
+           "{what is|tell me|for} {tomorrow|tomorrows} {danger class|fire condition|fire danger} {for|in} {STATION}" ]
 	},function(req,res) {
         console.log('=1= NextDayConditionsIntent ');
         getWeatherConditions(req.slot('STATION'), res, returnFutureWeatherConditions);
@@ -170,7 +196,7 @@ app.intent('NextDayConditionsIntent', {
 
 app.intent('SafeToBurnIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{Can|may|should} I burn {for|in|near} {STATION} {|today}", 
+		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {STATION} {|today}", 
             "Is it safe to burn {in|near} {STATION} {|today}"]
 	},function(req,res) {
         console.log('=1= SafeToBurnIntent ');
@@ -182,7 +208,7 @@ app.intent('SafeToBurnIntent', {
 
 app.intent('SafeToBurnTomorrowIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{Can|may|should} I burn {for|in|near} {STATION} {tomorrow}", 
+		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {STATION} {tomorrow}", 
             "Is it safe to burn {in|near} {STATION} {tomorrow}"]
 	},function(req,res) {
         console.log('=1= SafeToBurnTomorrowIntent ');
