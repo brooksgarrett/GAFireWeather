@@ -6,8 +6,6 @@ var FuzzySet = require('fuzzyset.js');
 // Allow this module to be reloaded by hotswap when changed
 module.change_code = 1;
 
-const DEBUG = true;
-
 // Define an alexa-app
 var app = new alexa.app('gafirecondition');
 
@@ -102,7 +100,7 @@ function getWeatherConditions (heardStation, res, resCallback) {
 };
 
 function debugLog(func, msg) {
-    if (DEBUG) {
+    if (process.env.DEBUG) {
         console.log(`${func} | ${msg}`);
     }
 }
@@ -261,7 +259,7 @@ app.pre = function(request, response, type) {
     debugLog(this.name, 'Start');
     if (process.env.APPID && request.applicationId != process.env.APPID) {
         // fail ungracefully
-        debugLog(this.name, 'Invalid ID');
+        debugLog(this.name, `Invalid ID In: ${request.applicationId} Expected: ${process.env.APPID}`);
         response.fail("Invalid applicationId");
     }
     debugLog(this.name, 'Done');
