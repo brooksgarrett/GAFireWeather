@@ -257,9 +257,10 @@ app.intent('ListStationsIntent', {
 
 app.pre = function(request, response, type) {
     debugLog(this.name, 'Start');
-    if (process.env.APPID && request.applicationId != process.env.APPID) {
+    var appId = request.data.session.application.applicationId;
+    if (process.env.APPID && (appId != process.env.APPID)) {
         // fail ungracefully
-        debugLog(this.name, `Invalid ID In: ${request.applicationId} Expected: ${process.env.APPID}`);
+        debugLog(this.name, `Invalid ID In: ${appId} Expected: ${process.env.APPID}`);
         response.fail("Invalid applicationId");
     }
     debugLog(this.name, 'Done');
