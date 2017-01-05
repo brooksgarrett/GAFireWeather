@@ -6,6 +6,8 @@ var FuzzySet = require('fuzzyset.js');
 // Allow this module to be reloaded by hotswap when changed
 module.change_code = 1;
 
+const DEBUG = true;
+
 // Define an alexa-app
 var app = new alexa.app('gafirecondition');
 
@@ -37,33 +39,42 @@ Conditions.prototype.textWindspeed = function () {
     }
 }
 
-findStation = function (station) {
+function findStation (station) {
+    debugLog(this.name, `Received |${station}|`);
     f = FuzzySet(STATIONS);
-    bestMatch = f.get(station)[0];
-    if (bestMatch[0] > 0.4){
-        return bestMatch[1];
+    bestMatch = f.get(station);
+    if (bestMatch == null) {
+        return undefined;
+    }
+    if (bestMatch[0][0] > 0.4){
+        return bestMatch[0][1];
     } else {
         return undefined;
     };
 };
 
-getWeatherConditions = function (heardStation, res, resCallback) {
-    console.log("==2== getWeatherConditions ====");
+function getWeatherConditions (heardStation, res, resCallback) {
+    debugLog(this.name, 'Start');
+    if (typeof(heardStation) === 'undefined'){
+        debugLog(this.name, 'heardStation undefined. Missing slot from intent?');
+        returnError(new Conditions(station, undefined, undefined, undefined, undefined, "No station was provided. Ask me for a list of stations if you need help."), res);
+    }
     station = findStation(heardStation);
     if (typeof(station) === 'undefined'){
+        debugLog(this.name, 'Fuzzy returned undefined');
         returnError(new Conditions(station, undefined, undefined, undefined, undefined, "That doesn't seem like a valid station. Ask me for a list of stations if you need help."), res);
     }
     request('http://weather.gfc.state.ga.us/CURRENT2/NFDRSSUM11.aspx', function (error, response, body) {
-            console.log("===3=== Entering request");
+            debugLog(this.name, 'Starting async request');
             var danger = 1;
             var error = undefined;
             if (!error && response.statusCode == 200) {
-                console.log("==2== Good Request");
+                debugLog(this.name, 'Valid response received');
                 $ = cheerio.load(body);
                 var stationRow = $(`table table tr:has(td:contains('${station}'))`);
                 if (stationRow.length > 0) {
                     if ($("td:contains('Data not')", stationRow).length > 0) {
-                        console.log("==2== Data was not available");
+                        debugLog(this.name, `Data not available for |${station}`);
                         returnError(new Conditions(station, undefined, undefined, undefined, undefined, "The data wasn't available for that station"), res);
                     } else {
                         var stationConditions = new Conditions(
@@ -74,36 +85,44 @@ getWeatherConditions = function (heardStation, res, resCallback) {
                             $("td", stationRow).eq(10).text(),
                             undefined
                         );
-                        console.log("==2== Returning current conditions");
+                        debugLog(this.name, "Done and returning conditions");
                         resCallback(stationConditions, res);
                     }
                 } else {
+                    debugLog(this.name, "Station wasn't valid");
                     returnError(new Conditions(station, undefined, undefined, undefined, undefined, "That doesn't seem like a valid station. Ask me for a list of stations if you need help."), res);
                 }
 
                 
             } else {
-                console.log("===3=== badRequest");
+                debugLog(this.name, "Bad response received");
                 returnError(new Conditions(undefined, undefined, undefined, undefined, undefined, "I could not retreive the data"), res);
             }
         });
 };
 
+function debugLog(func, msg) {
+    if (DEBUG) {
+        console.log(`${func} | ${msg}`);
+    }
+}
+
 function returnCurrentWeatherConditions (conditions, res) {
-    console.log("===3=== getCurrentWeatherConditions");
+    debugLog(this.name, 'Start');
     res.say(`The danger class is ${conditions.danger_class_today} in ${conditions.station} today`);
     res.send();
-    console.log("===3=== Response sent");
+    debugLog(this.name, 'Done');
 };
 
 function returnFutureWeatherConditions (conditions, res) {
-    console.log("===3=== getCurrentWeatherConditions");
+    debugLog(this.name, 'Start');
     res.say(`The danger class will be ${conditions.danger_class_tomorrow} in ${conditions.station} tomorrow`);
     res.send();
-    console.log("===3=== Response sent");
+    debugLog(this.name, 'Done');
 };
 
 function calculateBurnRisk(conditions, day) {
+    debugLog(this.name, 'Start with ${conditions}|${day}');
     var risk = '';
     var command = '';
     switch (conditions.danger_class_today.trim()){
@@ -143,80 +162,83 @@ function calculateBurnRisk(conditions, day) {
             command = 'are not allowed to';
             break;
     }
+    debugLog(this.name, 'Done with ${risk}|${command}');
     return `The risk is ${risk} ${day} and you ${command} burn`;
 }
 
 function returnSafeToBurn (conditions, res) {
-    console.log("===3=== returnSafeToBurn");
+    debugLog(this.name, 'Start');
     var message = calculateBurnRisk(conditions, 'today');
     res.say(message);
     res.send();
-    console.log("===3=== Response sent");
+    debugLog(this.name, 'Done');
 };
 
 function returnSafeToBurnTomorrow (conditions, res) {
-    console.log("===3=== returnSafeToBurnTomorrow");
+    debugLog(this.name, 'Start');
     var message = calculateBurnRisk(conditions, 'tomorrow');
     res.say(message);
     res.send();
-    console.log("===3=== Response sent");
+    debugLog(this.name, 'Done');
 };
 
 function returnError (conditions, res) {
-    console.log("===3=== An error was defined");
+    debugLog(this.name, 'Start');
     res.say(`I'm sorry but ${conditions.error}`);
     res.send();
-    console.log("===3=== Response sent");
+    debugLog(this.name, 'Done');
 };
 
-function stationHelper(station) {
-
-}
+app.launch(function(req, res) {
+    res.say("Try telling fire report what to do instead of opening it");
+});
 
 app.intent('CurrentConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me|for} {|the} {|report|conditions|danger class|fire condition} {for|in} {STATION}{| today}",
-            "{what is|tell me|for} {|today|todays} {|the} {danger class|fire condition|fire danger} {for|in} {STATION}"]
+		,"utterances":[
+            "{what is|tell me|for} the {report|conditions|danger class|fire condition} {for|in} {-|STATION}{| today}",
+            "{what is|tell me|for} {|today|todays} {|the} {danger class|fire condition|fire danger} {for|in} {-|STATION}"]
 	},function(req,res) {
-        console.log('=1= CurrentConditionsIntent ');
+        debugLog(this.name, 'Start');
         getWeatherConditions(req.slot('STATION'), res, returnCurrentWeatherConditions);
-        console.log('=1= Returned ');
+        debugLog(this.name, 'Done');
 		return false;
 	}
 );
 
 app.intent('NextDayConditionsIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{what is|tell me|for} {|the} {|report|conditions|danger class|fire condition} {for|in} {STATION} {tomorrow}",
-           "{what is|tell me|for} {tomorrow|tomorrows} {danger class|fire condition|fire danger} {for|in} {STATION}" ]
+		,"utterances":[
+            "{what is|tell me|for} {the} {report|conditions|danger class|fire condition} {for|in} {-|STATION} {tomorrow}",
+            "{what is|tell me|for} {tomorrow|tomorrows} {danger class|fire condition|fire danger} {for|in} {-|STATION}" ]
 	},function(req,res) {
-        console.log('=1= NextDayConditionsIntent ');
+        debugLog(this.name, 'Start');
         getWeatherConditions(req.slot('STATION'), res, returnFutureWeatherConditions);
-        console.log('=1= Returned ');
+        debugLog(this.name, 'Done');
 		return false;
 	}
 );
 
 app.intent('SafeToBurnIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {STATION} {|today}", 
-            "Is it safe to burn {in|near} {STATION} {|today}"]
+		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {-|STATION} {|today}", 
+            "Is it safe to burn {in|near} {-|STATION} {|today}"]
 	},function(req,res) {
-        console.log('=1= SafeToBurnIntent ');
+        debugLog(this.name, 'Start');
         getWeatherConditions(req.slot('STATION'), res, returnSafeToBurn);
-        console.log('=1= Returned ');
+        debugLog(this.name, 'Done');
 		return false;
 	}
 );
 
 app.intent('SafeToBurnTomorrowIntent', {
 		"slots":{"STATION":"LIST_OF_STATIONS"}
-		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {STATION} {tomorrow}", 
-            "Is it safe to burn {in|near} {STATION} {tomorrow}"]
+		,"utterances":["{Can|may|should|if} I {|Can|may|should} burn {for|in|near} {-|STATION\} {tomorrow}", 
+            "Is it safe to burn {in|near} {-|STATION} {tomorrow}"]
 	},function(req,res) {
-        console.log('=1= SafeToBurnTomorrowIntent ');
+        debugLog(this.name, 'Start');
         getWeatherConditions(req.slot('STATION'), res, returnSafeToBurnTomorrow);
-        console.log('=1= Returned ');
+        debugLog(this.name, 'Done');
 		return false;
 	}
 );
@@ -226,20 +248,23 @@ app.intent('ListStationsIntent', {
 		"utterances":["What stations are available", 
             "List {|all|the} stations"]
 	},function(req,res) {
-        console.log('=1= ListStationsIntent ');
+        debugLog(this.name, 'Start');
         res.say('You can say Chatsworth, Dallas, Dawsonville, Sumtner, Watkinsville, Camilla, Americus, Adel, ' + 
         'Byromville, Fort Benning, Washington, Louisville, Brender NFS, Milledgeville, Newnan, Sterling, Waycross, ' + 
         'Baxley, Folkston, Fargo, Eddy Tower, McRae, Metter, Midway, Claxton, Richmond Hill, Taylor Creek, Lawson, ' +
         'or Ft. Stewart');
-        console.log('=1= Returned ');
+        debugLog(this.name, 'Done');
 	}
 );
 
 app.pre = function(request, response, type) {
-  if (process.env.APPID && request.applicationId != process.env.APPID) {
-    // fail ungracefully
-    response.fail("Invalid applicationId");
-  }
+    debugLog(this.name, 'Start');
+    if (process.env.APPID && request.applicationId != process.env.APPID) {
+        // fail ungracefully
+        debugLog(this.name, 'Invalid ID');
+        response.fail("Invalid applicationId");
+    }
+    debugLog(this.name, 'Done');
 };
 
 module.exports = app;
